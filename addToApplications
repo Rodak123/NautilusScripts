@@ -1,0 +1,74 @@
+#!/bin/bash
+
+exec="$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
+
+cancelMessage="Desktop entry creation canceled."
+
+desktopEntryName=$(zenity --entry --title="Enter Desktop Entry Name" --text="Enter the desktop entry name:")
+if [ -z "$desktopEntryName" ]; then
+    zenity --info --text="$cancelMessage"
+    exit 1
+fi
+
+name=$(zenity --entry --title="Enter Application Name" --text="Enter the name of the application:")
+if [ -z "$name" ]; then
+    zenity --info --text="$cancelMessage"
+    exit 1
+fi
+
+folderPath=$(dirname "$exec")
+icon=$(zenity --file-selection --title="Select Icon" --filename="$folderPath/" --file-filter="*.png")
+if [ -z "$icon" ]; then
+    zenity --info --text="$cancelMessage"
+    exit 1
+fi
+
+categories=$(zenity --list --title="Select Categories" --column="" --multiple --checklist --separator="; " \
+    --column="Category" \
+    FALSE "AudioVideo" \
+    FALSE "Audio" \
+    FALSE "Video" \
+    FALSE "IDE" \
+    FALSE "Development" \
+    FALSE "Education" \
+    FALSE "Game" \
+    FALSE "Graphics" \
+    FALSE "Network" \
+    FALSE "Office" \
+    FALSE "Science" \
+    FALSE "Settings" \
+    FALSE "System" \
+    FALSE "Utility")
+if [ -z "$categories" ]; then
+    zenity --info --text="$cancelMessage"
+    exit 1
+fi
+
+comment=$(zenity --entry --title="Enter Comment" --text="Enter the comment:")
+if [ -z "$comment" ]; then
+    zenity --info --text="$cancelMessage"
+    exit 1
+fi
+
+usesTerminal=$(zenity --question --title="Open Terminal?" --text="Should the application open the terminal?")
+
+if [ "$usesTerminal" = "true" ]; then
+    terminal="true"
+else
+    terminal="false"
+fi
+
+entry="[Desktop Entry]
+Name=$name
+Terminal=$terminal
+Type=Application
+Categories=$(IFS=,; echo "$categories")
+Comment=$comment
+Icon=$icon
+Exec=$exec"
+
+entryPath="$HOME/.local/share/applications/$desktopEntryName.desktop"
+
+echo "$entry" > "$entryPath"
+
+chmod +x "$entryPath"
